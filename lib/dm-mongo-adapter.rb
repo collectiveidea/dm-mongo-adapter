@@ -10,11 +10,6 @@ module DataMapper::Adapters
       @database   = @connection.db(options[:database])
     end
     
-    # undefine so adapter spec shows these as pending
-    [:update, :delete].each do |m|
-      undef_method m
-    end
-    
     def create(resources)
       resources.each do |resource|
         resource.id ||= Mongo::ObjectID.new.to_s
@@ -24,6 +19,19 @@ module DataMapper::Adapters
     
     def read(query)
       query.filter_records collection(query.model).find()
+    end
+    
+    def update(attributes, resources)
+      attributes = attributes_as_fields(attributes)
+      resources.each do |resource|
+        collection(resource.model).save resource.attributes(:field).merge(attributes)
+      end
+    end
+    
+    def delete(resources)
+      resources.each do |resource|
+        collection(resource.model).delete(resource.id)
+      end
     end
   
   private
